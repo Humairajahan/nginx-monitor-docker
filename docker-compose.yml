@@ -1,0 +1,56 @@
+version: "3"
+
+services:
+  app1:
+    build: ./app1
+
+  app2:
+    build: ./app2
+  
+  app3:
+    build: ./app3
+  
+  nginx:
+    container_name: nginx
+    build: ./nginx 
+    ports:
+    - 80:80
+    depends_on:
+      - app1
+      - app2
+      - app3
+
+  nginx-prometheus-exporter: 
+    image: nginx/nginx-prometheus-exporter:0.10.0
+    container_name: nginx_prometheus_exporter
+    command:
+      # - '-it'
+      # - '--network host'
+      - '-nginx.scrape-uri=http://localhost:80/metrics'
+    depends_on:
+      - nginx
+    ports:
+      - 9113:9113
+    network_mode: "host"
+
+  prometheus:
+    build: ./prometheus
+    container_name: prom
+    ports:
+      - 9090:9090
+    network_mode: "host"
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    user: ":"
+    container_name: grafana
+    volumes: 
+      - ./grafana-data:/var/lib/grafana
+    ports:
+      - 3000:3000
+    environment:
+      - TIMEZONE="Asia/Dacca"
+      - GF_SECURITY_ADMIN_USER=tuba
+      - GF_SECURITY_ADMIN_PASSWORD=tuba
+      - GF_USERS_ALLOW_SIGN_UP=false

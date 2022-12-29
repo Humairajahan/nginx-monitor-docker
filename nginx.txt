@@ -1,0 +1,53 @@
+Directory
+/etc/nginx/nginx.conf
+/etc/nginx/conf-d/default.conf
+
+server {
+    listen 80;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-forwarded-For $proxy_add_x_forwarded_for;
+    location / {
+        proxy_pass http://10.1.1.14:9000/app1:
+    }
+}
+
+
+# Round Robin
+upstream backend_servers {
+    server 10.1.1.4:9001;
+    server 10.1.1.4:9002;
+}
+
+server {
+    listen 80;
+        location / {
+            proxy_pass http://backend_servers;
+        }
+}
+
+# Weighted Round Robin
+upstream backend_servers {
+    server 10.1.1.4:9001 weight=2;
+    server 10.1.1.4:9002 weight=5;
+}
+
+server {
+    listen 80;
+        location / {
+            proxy_pass http://backend_servers;
+        }
+}
+
+# Server Fails and Timeouts
+upstream backend_servers {
+    server 10.1.1.4:9001 weight=2 max_fails=10 fail_timeout=90s;
+    server 10.1.1.4:9002 weight=5 max_fails=10 fail_timeout=90s;
+}
+
+server {
+    listen 80;
+        location / {
+            proxy_pass http://backend_servers;
+        }
+}
